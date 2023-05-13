@@ -1,59 +1,54 @@
 import jwt from "jsonwebtoken";
 import { pool } from "../db.js";
 import bcrypt from "bcryptjs";
-
 import { sendEmails } from "./helpers/nodemailer.js";
 
-//crud usuario
-export const getRegistro = (req, res) => {
-    res.send("Registro de usuarios")
-}
-
-
+    export const getRegistro = async (req, res) => {
+        try {
+        const registros = await pool.query('SELECT * FROM cliente');
+        res.send({ registros });
+        } catch (error) {
+        console.log(error);
+        res.status(500).send('Error al obtener los registros')
+        }
+    }
+  
 
 export const postRegistro = async (req, res) => {
-    try {
-        const {id, nombre,telefono,direccion, email, password } = req.body;
+  try {
+    const { id, nombre, telefono, direccion, email, password } = req.body;
 
-        // Verificar si alguno de los campos está vacío
-        if ([id,nombre,  telefono, direccion, email, password].some(field => !field)) {
-            return res.status(400).json({
-                message: "Por favor, rellene todos los campos  son obligatorios."
-            });
-        }
-      
-        const saltCli = 10;
-        const hashedPassword = await bcrypt.hash(password, saltCli);
-
-        console.log(nombre);
-        const rows_insert = await pool.query('INSERT INTO cliente (id_cliente,nombre_cliente,telefono_cliente,direccion_cliente,email_cliente,password_cliente) VALUES (?,?,?,?,?,?)', [id,nombre, telefono,direccion, email, hashedPassword],
-            
-        ()=>{
-            if(rows_insert==undefined){
-                console.log("Error en la base de datos");
-            }else{
-                console.log("INSERT OK");
-            }
-        }
-        )
-    
-        const data={id,nombre, telefono,direccion, email, hashedPassword}.json;
-        res.send(data);
-
-
-        await sendEmails(email,1,nombre);
-        console.log("se envia el correo");
-    } catch (error) {
-        console.log("no se envia el correo");
-        console.log(error);
-        return res.status(500).json({
-            message: "Error al crear el usuario",
-        });
+    // Verificar si alguno de los campos está vacío
+    if ([id, nombre, telefono, direccion, email, password].some((field) => !field)) {
+      return res.status(400).json({
+        message: "Por favor, rellene todos los campos obligatorios.",
+      });
     }
+
+    const saltCli = 10;
+    const hashedPassword = await bcrypt.hash(password, saltCli);
+    const queryResult = await pool.query(
+      'INSERT INTO cliente (id_cliente, nombre_cliente, telefono_cliente, direccion_cliente, email_cliente, password_cliente) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, nombre, telefono, direccion, email, hashedPassword]
+    
+    );
+
+    if (queryResult.affectedRows > 0) {
+      res.status(200).json({
+        message: "Usuario creado exitosamente.",
+      });
+    } else {
+      res.status(500).json({
+        message: "Error al crear el usuario.",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error al crear el usuario.",
+    });
+  }
 };
-
-
-
 
 //login usuario
 

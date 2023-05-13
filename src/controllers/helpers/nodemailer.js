@@ -15,7 +15,6 @@ const transporter = nodemailer.createTransport({
 export function sendEmails(email, param, nombre, tokensEmail, tokenEmail, tokenEmails) {
   
   if (param === 1) {
-    console.log("entro?");
     transporter.sendMail({
         from: 'kopycrazys@gmail.com',
         to: email,
